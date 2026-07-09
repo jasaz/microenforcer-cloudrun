@@ -23,13 +23,12 @@ metadata:
   annotations:
     run.googleapis.com/launch-stage: BETA
     run.googleapis.com/ingress: all
+    run.googleapis.com/minScale: "1"
+    run.googleapis.com/maxScale: "1"
 spec:
   template:
     metadata:
-      annotations:
-        # Scaling: exactly 1 instance (always warm, no scale-out)
-        run.googleapis.com/minScale: "1"
-        run.googleapis.com/maxScale: "1"
+      annotations: {}
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
