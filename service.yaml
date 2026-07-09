@@ -2,13 +2,15 @@
 # Cloud Run Service Definition — Multi-Container with MicroEnforcer Sidecar
 # =============================================================================
 # This YAML defines a Cloud Run service with two containers:
-#   1. microenforcer-sidecar: Aqua MicroEnforcer image running as a sidecar
-#      container with a shared in-memory volume mounted at /shared.
+#   1. microenforcer-init: Aqua MicroEnforcer init container that copies its
+#      binaries from /.aquasec/ to the shared volume at /shared, then runs
+#      an nc listener on port 1234 as a startup probe target.
 #   2. flask-app: The main Flask application serving HTTP traffic on port 8080.
+#      Mounts the shared volume at /.aquasec to receive the MicroEnforcer
+#      binaries.
 #
-# The MicroEnforcer image is mirrored from registry.aquasec.com to Artifact
-# Registry in the CI pipeline via crane copy. The mirrored image is used
-# directly as the sidecar — no custom Dockerfile needed.
+# Container startup ordering is controlled via the container-dependencies
+# annotation, ensuring the init container is ready before the Flask app starts.
 #
 # Image placeholders (INIT_IMAGE_PLACEHOLDER, APP_IMAGE_PLACEHOLDER) are
 # replaced by the CI pipeline with the actual Artifact Registry URIs.
@@ -28,26 +30,46 @@ metadata:
 spec:
   template:
     metadata:
-      annotations: {}
+      annotations:
+        # Startup ordering: flask-app waits for microenforcer-init to be ready
+        run.googleapis.com/container-dependencies: '{"flask-app": ["microenforcer-init"]}'
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
       containers:
         # -----------------------------------------------------------------
         # Main container: Flask Hello World application (ingress)
+        # Shared volume mounted at /.aquasec to receive MicroEnforcer binaries
         # -----------------------------------------------------------------
         - name: flask-app
           image: APP_IMAGE_PLACEHOLDER
+          command: ["/.aquasec/bin/microenforcer"]
+          args: ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "2", "app:app"]
           ports:
             - name: http1
               containerPort: 8080
+          env:
+            - name: AQUA_TOKEN
+              value: "AQUA_TOKEN_PLACEHOLDER"
+            - name: AQUA_SERVER
+              value: "AQUA_SERVER_PLACEHOLDER"
+            - name: AQUA_DEBUG_LEVEL
+              value: "AQUA_DEBUG_LEVEL_PLACEHOLDER"
+            - name: AQUA_DEBUG_TYPE
+              value: "AQUA_DEBUG_TYPE_PLACEHOLDER"
+            - name: AQUA_IMAGE_ID
+              value: "AQUA_IMAGE_ID_PLACEHOLDER"
+            - name: AQUA_MICROENFORCER
+              value: "AQUA_MICROENFORCER_PLACEHOLDER"
+            - name: LD_PRELOAD
+              value: "LD_PRELOAD_PLACEHOLDER"
           resources:
             limits:
               cpu: "1"
               memory: 512Mi
           volumeMounts:
             - name: aqua-shared
-              mountPath: /shared
+              mountPath: /.aquasec
           startupProbe:
             httpGet:
               path: /healthz
@@ -62,15 +84,16 @@ spec:
             periodSeconds: 15
 
         # -----------------------------------------------------------------
-        # Sidecar: Aqua MicroEnforcer (runtime protection)
+        # Init container: Aqua MicroEnforcer
+        # Copies binaries from /.aquasec/ to /shared (shared volume),
+        # then runs nc listener on port 1234 for startup probe.
         # -----------------------------------------------------------------
-        - name: microenforcer-sidecar
+        - name: microenforcer-init
           image: INIT_IMAGE_PLACEHOLDER
-          env:
-            - name: AQUA_SERVER
-              value: "AQUA_SERVER_PLACEHOLDER"
-            - name: AQUA_TOKEN
-              value: "AQUA_TOKEN_PLACEHOLDER"
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - "/bin/cp -rv /.aquasec/* /shared/ && /usr/bin/nc -l -p 1234 && sleep infinity"
           resources:
             limits:
               cpu: "0.5"
@@ -78,6 +101,13 @@ spec:
           volumeMounts:
             - name: aqua-shared
               mountPath: /shared
+          startupProbe:
+            tcpSocket:
+              port: 1234
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 1
 
       volumes:
         - name: aqua-shared
