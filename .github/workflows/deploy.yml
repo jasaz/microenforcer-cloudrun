@@ -142,7 +142,18 @@ jobs:
             --project=${{ env.PROJECT_ID }}
 
       # ---------------------------------------------------------------
-      # 11. Route all traffic to the latest revision
+      # 11. Allow unauthenticated (public) access
+      # ---------------------------------------------------------------
+      - name: Allow unauthenticated access
+        run: |
+          gcloud run services add-iam-policy-binding ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --member="allUsers" \
+            --role="roles/run.invoker"
+
+      # ---------------------------------------------------------------
+      # 12. Route all traffic to the latest revision
       # ---------------------------------------------------------------
       - name: Route traffic to latest
         run: |
