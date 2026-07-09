@@ -1,0 +1,164 @@
+# =============================================================================
+# GitHub Actions CI/CD Pipeline
+# Deploy Flask + Aqua MicroEnforcer to Cloud Run
+# =============================================================================
+# Trigger: Push to main branch
+# Authentication: Workload Identity Federation (OIDC)
+#
+# Required GitHub Secrets:
+#   WIF_PROVIDER          - Full WIF provider resource name
+#   WIF_SERVICE_ACCOUNT   - GCP service account email
+#   AQUA_REGISTRY_USERNAME - Aqua Docker registry username
+#   AQUA_REGISTRY_PASSWORD - Aqua Docker registry password
+#   AQUA_SERVER           - Aqua Gateway/Console address
+#   AQUA_TOKEN            - Aqua Enforcer group token
+#
+# Required GitHub Variables:
+#   AQUA_ME_VERSION       - MicroEnforcer image version tag (e.g., 2022.4.874)
+# =============================================================================
+
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: cloudrun-microenforcer
+  REGION: asia-south1
+  SERVICE_NAME: microenforcer-flask
+  GAR_LOCATION: asia-south1-docker.pkg.dev
+  GAR_REPO: microenforcer-repo
+  AQUA_REGISTRY: registry.aquasec.com
+
+permissions:
+  contents: read
+  id-token: write   # Required for Workload Identity Federation OIDC
+
+jobs:
+  deploy:
+    name: Mirror, Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---------------------------------------------------------------
+      # 1. Checkout source code
+      # ---------------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------
+      # 2. Authenticate to GCP via Workload Identity Federation
+      # ---------------------------------------------------------------
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # ---------------------------------------------------------------
+      # 3. Setup gcloud CLI
+      # ---------------------------------------------------------------
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # ---------------------------------------------------------------
+      # 4. Install crane for cross-registry image operations
+      # ---------------------------------------------------------------
+      - name: Install crane
+        run: |
+          CRANE_VERSION="0.20.3"
+          curl -sL "https://github.com/google/go-containerregistry/releases/download/v${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz" \
+            | tar -xz -C /usr/local/bin crane
+          crane version
+
+      # ---------------------------------------------------------------
+      # 5. Login to Aqua Registry (for crane to pull the image)
+      # ---------------------------------------------------------------
+      - name: Login to Aqua Registry
+        run: |
+          crane auth login ${{ env.AQUA_REGISTRY }} \
+            -u "${{ secrets.AQUA_REGISTRY_USERNAME }}" \
+            -p "${{ secrets.AQUA_REGISTRY_PASSWORD }}"
+
+      # ---------------------------------------------------------------
+      # 6. Configure Docker for Google Artifact Registry
+      # ---------------------------------------------------------------
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.GAR_LOCATION }} --quiet
+
+      # ---------------------------------------------------------------
+      # 7. Copy MicroEnforcer image from Aqua Registry to Artifact Registry
+      # ---------------------------------------------------------------
+      - name: Copy MicroEnforcer image to Artifact Registry
+        run: |
+          SOURCE="${{ env.AQUA_REGISTRY }}/microenforcer:${{ vars.AQUA_ME_VERSION }}"
+          DESTINATION="${{ env.GAR_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/microenforcer:${{ vars.AQUA_ME_VERSION }}"
+
+          echo "Copying ${SOURCE} -> ${DESTINATION}"
+          crane copy "${SOURCE}" "${DESTINATION}"
+          echo "MicroEnforcer image mirrored successfully"
+
+          echo "INIT_IMAGE=${DESTINATION}" >> $GITHUB_ENV
+
+      # ---------------------------------------------------------------
+      # 8. Build and push Flask App image
+      # ---------------------------------------------------------------
+      - name: Build and push Flask App image
+        run: |
+          APP_IMAGE="${{ env.GAR_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/app:${{ github.sha }}"
+
+          docker build \
+            -t "${APP_IMAGE}" \
+            -f app/Dockerfile \
+            app/
+
+          docker push "${APP_IMAGE}"
+          echo "APP_IMAGE=${APP_IMAGE}" >> $GITHUB_ENV
+
+      # ---------------------------------------------------------------
+      # 9. Prepare service.yaml with actual image tags and env vars
+      # ---------------------------------------------------------------
+      - name: Prepare Cloud Run service manifest
+        run: |
+          sed -i "s|APP_IMAGE_PLACEHOLDER|${APP_IMAGE}|g" service.yaml
+          sed -i "s|INIT_IMAGE_PLACEHOLDER|${INIT_IMAGE}|g" service.yaml
+          sed -i "s|AQUA_SERVER_PLACEHOLDER|${{ secrets.AQUA_SERVER }}|g" service.yaml
+          sed -i "s|AQUA_TOKEN_PLACEHOLDER|${{ secrets.AQUA_TOKEN }}|g" service.yaml
+
+          echo "--- Prepared service.yaml ---"
+          cat service.yaml
+
+      # ---------------------------------------------------------------
+      # 10. Deploy to Cloud Run
+      # ---------------------------------------------------------------
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run services replace service.yaml \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }}
+
+      # ---------------------------------------------------------------
+      # 11. Route all traffic to the latest revision
+      # ---------------------------------------------------------------
+      - name: Route traffic to latest
+        run: |
+          gcloud run services update-traffic ${{ env.SERVICE_NAME }} \
+            --to-latest \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }}
+
+      # ---------------------------------------------------------------
+      # 12. Output the deployed service URL
+      # ---------------------------------------------------------------
+      - name: Get service URL
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format='value(status.url)')
+          echo "::notice::🚀 Cloud Run service deployed at: ${URL}"
+          echo "SERVICE_URL=${URL}" >> $GITHUB_OUTPUT
