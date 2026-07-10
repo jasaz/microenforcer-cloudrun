@@ -101,7 +101,7 @@ jobs:
       # ---------------------------------------------------------------
       - name: Copy MicroEnforcer image to Artifact Registry
         run: |
-          SOURCE="${{ env.AQUA_REGISTRY }}/microenforcer:${{ vars.AQUA_ME_VERSION }}"
+          SOURCE="${{ env.AQUA_REGISTRY }}/microenforcer-basic:${{ vars.AQUA_ME_VERSION }}"
           DESTINATION="${{ env.GAR_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/microenforcer:${{ vars.AQUA_ME_VERSION }}"
 
           echo "Copying ${SOURCE} -> ${DESTINATION}"
@@ -132,7 +132,7 @@ jobs:
         run: |
           sed -i "s|APP_IMAGE_PLACEHOLDER|${APP_IMAGE}|g" service.yaml
           sed -i "s|INIT_IMAGE_PLACEHOLDER|${INIT_IMAGE}|g" service.yaml
-          
+
           sed -i "s|AQUA_SERVER_PLACEHOLDER|${{ secrets.AQUA_SERVER }}|g" service.yaml
           sed -i "s|AQUA_TOKEN_PLACEHOLDER|${{ secrets.AQUA_TOKEN }}|g" service.yaml
           sed -i "s|LD_PRELOAD_PLACEHOLDER|${{ secrets.LD_PRELOAD }}|g" service.yaml
