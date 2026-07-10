@@ -75,10 +75,10 @@ spec:
             httpGet:
               path: /healthz
               port: 8080
-            initialDelaySeconds: 0
-            timeoutSeconds: 1
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
             periodSeconds: 10
-            failureThreshold: 3
+            failureThreshold: 12
           livenessProbe:
             httpGet:
               path: /healthz
@@ -98,7 +98,7 @@ spec:
           command: ["/bin/sh"]
           args:
             - "-c"
-            - "/bin/cp -rv /.aquasec/* /shared-aqua-volume/ && /usr/bin/nc -l -p 1234 && sleep infinity"
+            - "/bin/cp -rv /.aquasec/* /shared/ && /usr/bin/nc -l -p 1234 && sleep infinity"
           resources:
             limits:
               cpu: "1"
