@@ -26,13 +26,14 @@ metadata:
     run.googleapis.com/launch-stage: BETA
     run.googleapis.com/ingress: all
     run.googleapis.com/minScale: "1"
-    run.googleapis.com/maxScale: "1"
+    run.googleapis.com/maxScale: "2"
 spec:
   template:
     metadata:
       annotations:
         # Startup ordering: flask-app waits for microenforcer-init to be ready
         run.googleapis.com/container-dependencies: '{"flask-app": ["microenforcer-init"]}'
+        run.googleapis.com/startup-cpu-boost: 'true'
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
@@ -68,20 +69,24 @@ spec:
               cpu: "1"
               memory: 512Mi
           volumeMounts:
-            - name: aqua-shared
+            - name: shared-aqua-volume
               mountPath: /.aquasec
           startupProbe:
             httpGet:
               path: /healthz
               port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 10
+            initialDelaySeconds: 0
+            timeoutSeconds: 1
+            periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /healthz
               port: 8080
-            periodSeconds: 15
+            initialDelaySeconds: 0
+            timeoutSeconds: 1
+            periodSeconds: 10
+            failureThreshold: 5
 
         # -----------------------------------------------------------------
         # Init container: Aqua MicroEnforcer
@@ -93,13 +98,13 @@ spec:
           command: ["/bin/sh"]
           args:
             - "-c"
-            - "/bin/cp -rv /.aquasec/* /shared/ && /usr/bin/nc -l -p 1234 && sleep infinity"
+            - "/bin/cp -rv /.aquasec/* /shared-aqua-volume/ && /usr/bin/nc -l -p 1234 && sleep infinity"
           resources:
             limits:
-              cpu: "0.5"
-              memory: 256Mi
+              cpu: "1"
+              memory: 512Mi
           volumeMounts:
-            - name: aqua-shared
+            - name: shared-aqua-volume
               mountPath: /shared
           startupProbe:
             tcpSocket:
@@ -110,7 +115,7 @@ spec:
             timeoutSeconds: 1
 
       volumes:
-        - name: aqua-shared
+        - name: shared-aqua-volume
           emptyDir:
             medium: Memory
             sizeLimit: 128Mi
