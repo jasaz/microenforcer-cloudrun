@@ -141,6 +141,8 @@ jobs:
           sed -i "s|AQUA_DEBUG_TYPE_PLACEHOLDER|${{ vars.AQUA_DEBUG_TYPE }}|g" service.yaml
           sed -i "s|AQUA_MICROENFORCER_PLACEHOLDER|${{ vars.AQUA_MICROENFORCER }}|g" service.yaml
           sed -i "s|AQUA_IMAGE_ID_PLACEHOLDER|${{ vars.AQUA_IMAGE_ID }}|g" service.yaml
+          sed -i "s|AQUA_PRELOAD_NO_LIBDL_PLACEHOLDER|${{ vars.AQUA_PRELOAD_NO_LIBDL }}|g" service.yaml
+          
 
           echo "--- Prepared service.yaml ---"
           cat service.yaml
