@@ -65,7 +65,7 @@ spec:
             - name: LD_PRELOAD
               value: "LD_PRELOAD_PLACEHOLDER"
             - name: AQUA_PRELOAD_NO_LIBDL
-              value: AQUA_PRELOAD_NO_LIBDL_PLACEHOLDER
+              value: "AQUA_PRELOAD_NO_LIBDL_PLACEHOLDER"
           resources:
             limits:
               cpu: "1"
