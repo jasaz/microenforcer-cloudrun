@@ -16,7 +16,7 @@
 #   AQUA_IMAGE_ID         - MicroEnforcer image identifier
 #
 # Required GitHub Variables:
-#   AQUA_ME_VERSION       - MicroEnforcer image version tag (e.g., 2022.4.874)
+#   AQUA_ME_VERSION       - MicroEnforcer image version tag (e.g., 2022.4.880)
 # =============================================================================
 
 name: Deploy to Cloud Run
@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: cloudrun-microenforcer
+  PROJECT_ID: sandip-ipsos-demo
   REGION: asia-south1
   SERVICE_NAME: microenforcer-flask
   GAR_LOCATION: asia-south1-docker.pkg.dev
