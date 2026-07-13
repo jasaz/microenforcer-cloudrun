@@ -98,7 +98,7 @@ spec:
           command: ["/bin/sh"]
           args:
             - "-c"
-            - "/bin/cp -rv /.aquasec/* /shared/ && /usr/bin/nc -l -p 1234 && sleep infinity"
+            - "/bin/cp -rv /.aquasec/* /shared/ && while true; do /usr/bin/nc -l -p 1234; done"
           resources:
             limits:
               cpu: "1"
@@ -110,8 +110,8 @@ spec:
             tcpSocket:
               port: 1234
             initialDelaySeconds: 0
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 3
+            failureThreshold: 30
             timeoutSeconds: 1
 
       volumes:
