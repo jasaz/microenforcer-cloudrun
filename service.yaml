@@ -19,7 +19,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: me-run-flask
+  name: microenforcer-flask
   labels:
     cloud.googleapis.com/location: asia-south1
   annotations:
