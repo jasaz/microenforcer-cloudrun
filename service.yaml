@@ -19,7 +19,7 @@
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  name: microenforcer-flask
+  name: me-run-flask
   labels:
     cloud.googleapis.com/location: asia-south1
   annotations:
@@ -64,8 +64,10 @@ spec:
               value: "AQUA_MICROENFORCER_PLACEHOLDER"
             - name: LD_PRELOAD
               value: "LD_PRELOAD_PLACEHOLDER"
-            - name: AQUA_PRELOAD_NO_LIBDL
-              value: "AQUA_PRELOAD_NO_LIBDL_PLACEHOLDER"
+            # - name: SLKLIB_DEBUG
+            #   value: "SLKLIB_DEBUG_PLACEHOLDER"
+            # - name: AQUA_PRELOAD_NO_LIBDL
+            #   value: "AQUA_PRELOAD_NO_LIBDL_PLACEHOLDER"
           resources:
             limits:
               cpu: "1"
