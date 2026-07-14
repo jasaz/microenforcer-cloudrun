@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: sandip-ipsos-demo
+  PROJECT_ID: cloudrun-microenforcer
   REGION: asia-south1
   SERVICE_NAME: microenforcer-run-flask
   GAR_LOCATION: asia-south1-docker.pkg.dev
