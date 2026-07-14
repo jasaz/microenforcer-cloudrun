@@ -25,8 +25,8 @@ metadata:
   annotations:
     run.googleapis.com/launch-stage: BETA
     run.googleapis.com/ingress: all
-    run.googleapis.com/minScale: "1"
-    run.googleapis.com/maxScale: "2"
+    run.googleapis.com/minScale: "0"
+    run.googleapis.com/maxScale: "1"
 spec:
   template:
     metadata:
