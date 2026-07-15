@@ -15,9 +15,6 @@ TEST_FILE_PATH = os.path.join(TEST_FILE_DIR, "protected_test_file.txt")
 @app.route("/")
 def hello():
     """Root endpoint returning a hello world message."""
-
-    # Add a 30 sec delay
-    time.sleep(30)
     return jsonify(
         message="Hello World from Cloud Run with Aqua MicroEnforcer!",
         service="microenforcer-flask",
@@ -29,6 +26,29 @@ def hello():
 def health():
     """Health check endpoint for Cloud Run."""
     return jsonify(status="healthy"), 200
+
+
+@app.route("/test-delay")
+def test_delay():
+    """
+    Introduces a configurable delay before responding.
+    Used to test MicroEnforcer runtime controls on long-running requests.
+
+    Query params:
+      - seconds: delay duration (default: 30, max: 120)
+
+    Usage:
+      GET /test-delay
+      GET /test-delay?seconds=45
+    """
+    delay = min(int(request.args.get("seconds", 30)), 120)
+    time.sleep(delay)
+    return jsonify(
+        test="Delay Test",
+        delay_seconds=delay,
+        status="completed",
+        message=f"Response returned after {delay} second delay",
+    ), 200
 
 
 @app.route("/test-file-block")
