@@ -46,11 +46,14 @@ Go to **Settings → Secrets and variables → Actions** in your GitHub reposito
 | Secret Name | Description | Example |
 |---|---|---|
 | `WIF_PROVIDER` | Full WIF provider resource name | `projects/123456789/locations/global/workloadIdentityPools/github-wif-pool/providers/github-provider` |
+| `WIF_SERVICE_ACCOUNT` | WIF service account | sa-name@project-id.iam.gserviceaccount.com |
 | `WIF_SERVICE_ACCOUNT` | GCP service account email | `github-deployer@project_id.iam.gserviceaccount.com` |
 | `AQUA_REGISTRY_USERNAME` | Aqua Docker registry username | `myuser@company.com` |
 | `AQUA_REGISTRY_PASSWORD` | Aqua Docker registry password | `••••••••` |
 | `AQUA_SERVER` | Aqua Gateway/Console address | `aqua-gateway.example.com:443` |
 | `AQUA_TOKEN` | Aqua Enforcer group token | `••••••••` |
+
+Please note that WIF_PROVIDER & WIF_SERVICE_ACCOUNT can be obtained after the execution of setup-wif.sh
 
 ### 3. Configure GitHub Variables
 
@@ -58,7 +61,11 @@ Go to **Settings → Secrets and variables → Actions → Variables** and add:
 
 | Variable Name | Description | Example |
 |---|---|---|
+| `AQUA_DEBUG_LEVEL` | MicroEnforcer image version tag | `3` |
+| `AQUA_DEBUG_TYPE` | MicroEnforcer image version tag | `STDOUT` |
+| `AQUA_IMAGE_ID` | MicroEnforcer image version tag | `sha256:...` |
 | `AQUA_ME_VERSION` | MicroEnforcer image version tag | `2022.4.880` |
+| `AQUA_MICROENFORCER` | MicroEnforcer image version tag | `1` |
 
 ## CI/CD Pipeline
 
