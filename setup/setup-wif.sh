@@ -17,12 +17,12 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Configuration — Update these values as needed
+# Configuration — Replace the below values
 # ---------------------------------------------------------------------------
-PROJECT_ID="cloudrun-microenforcer"
-REGION="asia-south1"
-GITHUB_ORG="jasaz"
-GITHUB_REPO="microenforcer-cloudrun"
+PROJECT_ID="project_id"
+REGION="region"
+GITHUB_ORG="github-user"
+GITHUB_REPO="github-repo"
 
 # Resource names
 SERVICE_ACCOUNT_NAME="github-deployer"
@@ -182,9 +182,9 @@ echo ""
 echo "Also add these secrets:"
 echo "  AQUA_REGISTRY_USERNAME - Your Aqua registry username"
 echo "  AQUA_REGISTRY_PASSWORD - Your Aqua registry password"
-echo "  AQUA_SERVER            - Your Aqua Gateway address (e.g., aqua-gw.example.com:8443)"
+echo "  AQUA_SERVER            - Your Aqua Gateway address (e.g., aqua-gw.example.com:443)"
 echo "  AQUA_TOKEN             - Your Aqua Enforcer group token"
 echo ""
 echo "And this GitHub Variable:"
-echo "  AQUA_ME_VERSION        - MicroEnforcer version tag (e.g., 2022.4.874)"
+echo "  AQUA_ME_VERSION        - MicroEnforcer version tag (e.g., 2022.4.880)"
 echo ""

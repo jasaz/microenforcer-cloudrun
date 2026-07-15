@@ -28,29 +28,6 @@ def health():
     return jsonify(status="healthy"), 200
 
 
-@app.route("/test-delay")
-def test_delay():
-    """
-    Introduces a configurable delay before responding.
-    Used to test MicroEnforcer runtime controls on long-running requests.
-
-    Query params:
-      - seconds: delay duration (default: 30, max: 120)
-
-    Usage:
-      GET /test-delay
-      GET /test-delay?seconds=45
-    """
-    delay = min(int(request.args.get("seconds", 30)), 120)
-    time.sleep(delay)
-    return jsonify(
-        test="Delay Test",
-        delay_seconds=delay,
-        status="completed",
-        message=f"Response returned after {delay} second delay",
-    ), 200
-
-
 @app.route("/test-file-block")
 def test_file_block():
     """

@@ -45,7 +45,7 @@ spec:
         - name: flask-app
           image: APP_IMAGE_PLACEHOLDER
           command: ["/.aquasec/bin/microenforcer"]
-          args: ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "80", "--timeout", "120", "app:app"]
+          args: ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "80","app:app"]
           ports:
             - name: http1
               containerPort: 8080
