@@ -163,20 +163,23 @@ def test_file_block():
 def test_port_block():
     """
     Tests MicroEnforcer port block policy by attempting outbound TCP
-    connections to specified ports.
+    connections to external hosts on specified ports, and inbound
+    listening on those ports.
 
     Query params:
       - ports: (optional) comma-separated list of ports to test
                (default: 22,23,25,3306,5432,6379)
-      - host:  (optional) target host (default: 127.0.0.1)
+      - host:  (optional) target host for outbound test
+               (default: 8.8.8.8 — Google DNS, external)
 
     Usage:
       GET /test-port-block
-      GET /test-port-block?ports=22,80,443,3306&host=127.0.0.1
+      GET /test-port-block?ports=3306
+      GET /test-port-block?ports=22,3306,5432&host=203.0.113.1
     """
     default_ports = "22,23,25,3306,5432,6379"
     ports_str = request.args.get("ports", default_ports)
-    target_host = request.args.get("host", "127.0.0.1")
+    target_host = request.args.get("host", "8.8.8.8")
 
     try:
         ports = [int(p.strip()) for p in ports_str.split(",")]
