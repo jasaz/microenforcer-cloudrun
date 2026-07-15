@@ -2,6 +2,7 @@ import os
 import socket
 import subprocess
 import tempfile
+import time
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -14,6 +15,9 @@ TEST_FILE_PATH = os.path.join(TEST_FILE_DIR, "protected_test_file.txt")
 @app.route("/")
 def hello():
     """Root endpoint returning a hello world message."""
+
+    # Add a 30 sec delay
+    time.sleep(30)
     return jsonify(
         message="Hello World from Cloud Run with Aqua MicroEnforcer!",
         service="microenforcer-flask",
